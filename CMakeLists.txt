@@ -1,0 +1,24 @@
+cmake_minimum_required(VERSION 3.10)
+
+project(terrain-gen)
+
+set(CMAKE_C_COMPILER gcc)
+set(CMAKE_CXX_COMPILER g++)
+set(CMAKE_CXX_STANDARD 17)
+
+add_compile_options(-Wall)
+
+set(CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR})
+set(CMAKE_LIBRARY_PATH ${CMAKE_PREFIX_PATH}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+add_executable(terrain-gen ${CMAKE_SOURCE_DIR}/src/main.cpp ${CMAKE_SOURCE_DIR}/src/glad.c)
+
+target_include_directories(terrain-gen PUBLIC ${CMAKE_SOURCE_DIR}/include)
+
+find_library(GLFW NAMES glfw glfw3 REQUIRED)
+target_link_libraries(terrain-gen PRIVATE ${GLFW})
+
+file(COPY ${CMAKE_SOURCE_DIR}/src/shaders DESTINATION ${CMAKE_BINARY_DIR})
