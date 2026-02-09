@@ -9,7 +9,8 @@
 #include "camera.hpp"
 #include "shader.hpp"
 
-#define SQUARES_PER_SIDE 100
+#define SQUARES_PER_SIDE 256
+#define SCALE 16 / SQUARES_PER_SIDE
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int size);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos); 
@@ -17,7 +18,10 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
 void processInput(GLFWwindow* window);
 
+void getObjects();
+
 void getPlaneVertices(glm::vec3 planeVertices[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)]);
+void getPlaneTexCoords(glm::vec2 planeTexCoords[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)]);
 void getPlaneIndices(unsigned int planeIndices[SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6]);
 
 const unsigned int SCR_WIDTH = 1280;
@@ -28,10 +32,24 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
 glm::vec3 cameraUp(0.0f, 1.0f, 0.0f);
-glm::vec3 cameraInitPos(0.0f, 1.0f, 5.0f);
+glm::vec3 cameraInitPos(0.0f, 3.0f, 0.0f);
 
 Camera camera(cameraInitPos, cameraUp, SCR_WIDTH, SCR_HEIGHT);
 glm::mat4 proj = glm::perspective(glm::radians(60.0f), float(SCR_WIDTH) / float(SCR_HEIGHT), 0.1f, 100.0f);
+
+unsigned int triangleVAO, triangleVBO;
+unsigned int quadVAO, quadVBO;
+unsigned int planeVAO, planeVertexVBO, planeTexCoordsVBO, planeEBO;
+unsigned int noiseFBO, noiseTex;
+unsigned int screenFBO, screenTexture;
+
+std::string buildPath = "/home/edthi/Projects/terrain-gen/build/";
+
+void renderQuad() {
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+}
 
 int main() {
 
@@ -69,49 +87,11 @@ int main() {
     // GL config
     glEnable(GL_DEPTH_TEST);
 
-    float vertices[18] = {
-        -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
-         0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
-         0.0f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f
-    };
+    getObjects();
 
-    unsigned int triangleVAO, triangleVBO;
-    glGenVertexArrays(1, &triangleVAO);
-    glGenBuffers(1, &triangleVBO);
-    glBindVertexArray(triangleVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, triangleVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-    glBindVertexArray(0);
-
-    glm::vec3 planeVertices[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)];
-    unsigned int planeIndices[SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6];
-
-    getPlaneVertices(planeVertices);
-    getPlaneIndices(planeIndices);
-
-    unsigned int planeVAO, planeVBO;
-    glGenVertexArrays(1, &planeVAO);
-    glGenBuffers(1, &planeVBO);
-    glBindVertexArray(planeVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    unsigned int planeEBO;
-    glGenBuffers(1, &planeEBO);
-    glBindVertexArray(planeVAO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, planeEBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(planeIndices), planeIndices, GL_STATIC_DRAW);
-
-    glBindVertexArray(0);
-
-    std::string buildPath = "/home/edthi/Projects/terrain-gen/build/";
     Shader testShader(buildPath, "test");
+    Shader noiseGenShader(buildPath, "noisegen");
+
     testShader.use();
 
     glm::mat4 view = camera.GetViewMatrix();
@@ -127,11 +107,20 @@ int main() {
 
         glClearColor(0.2f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+        glBindFramebuffer(GL_FRAMEBUFFER, noiseFBO);
+        noiseGenShader.use();
+        renderQuad();
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, noiseTex);
 
         testShader.use();
         testShader.setVec3("color", glm::vec3(0.5f, 0.5f, 0.2f));
         testShader.setMat4("projection", proj);
         testShader.setMat4("view", view);
+        testShader.setInt("heightMap", 0);
 
         glBindVertexArray(planeVAO);
         glDrawElements(GL_TRIANGLES, SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6, GL_UNSIGNED_INT, 0);
@@ -176,18 +165,126 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
     camera.ProcessScroll(yoffset);
 }
 
+void getObjects() {
+
+    // triangle //
+    float vertices[18] = {
+        -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
+         0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
+         0.0f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f
+    };
+
+    glGenVertexArrays(1, &triangleVAO);
+    glGenBuffers(1, &triangleVBO);
+    glBindVertexArray(triangleVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, triangleVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
+
+    // quad //
+
+    float quadVertices[24] = {
+        -1.0f,  1.0f, 0.0f, 1.0f,
+        -1.0f, -1.0f, 0.0f, 0.0f,
+         1.0f, -1.0f, 1.0f, 0.0f,
+         1.0f, -1.0f, 1.0f, 0.0f,
+         1.0f,  1.0f, 1.0f, 1.0f,
+        -1.0f,  1.0f, 0.0f, 1.0f
+    };
+
+    glGenVertexArrays(1, &quadVAO);
+    glGenBuffers(1, &quadVBO);
+    glBindVertexArray(quadVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(sizeof(float) * 2));
+    glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
+
+    // plane //
+    glm::vec3 planeVertices[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)];
+    glm::vec2 planeTexCoords[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)];
+    unsigned int planeIndices[SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6];
+
+    getPlaneVertices(planeVertices);
+    getPlaneTexCoords(planeTexCoords);
+    getPlaneIndices(planeIndices);
+
+    glGenVertexArrays(1, &planeVAO);
+    glBindVertexArray(planeVAO);
+
+    glGenBuffers(1, &planeVertexVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, planeVertexVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glGenBuffers(1, &planeTexCoordsVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, planeTexCoordsVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(planeTexCoords), planeTexCoords, GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+
+    glGenBuffers(1, &planeEBO);
+    glBindVertexArray(planeVAO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, planeEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(planeIndices), planeIndices, GL_STATIC_DRAW);
+    glBindVertexArray(0);
+
+    glGenFramebuffers(1, &screenFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, screenFBO);
+
+    glGenTextures(1, &screenTexture);
+    glBindTexture(GL_TEXTURE_2D, screenTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, framebufferWidth, framebufferHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screenTexture, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glGenFramebuffers(1, &noiseFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, noiseFBO);
+
+    glGenTextures(1, &noiseTex);
+    glBindTexture(GL_TEXTURE_2D, noiseTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, 512, 512, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, noiseTex, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 void getPlaneVertices(glm::vec3 planeVertices[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)]) {
 
     for (int i = 0; i < SQUARES_PER_SIDE + 1; i++) {
         for (int j = 0; j < SQUARES_PER_SIDE + 1; j++) {
 
-            float scale = 0.125f;
-
-            float xPos = (float(i) - float(SQUARES_PER_SIDE) / 2.0f) * scale;
-            float zPos = (float(j) - float(SQUARES_PER_SIDE) / 2.0f) * scale;
-            float yPos = xPos * xPos + zPos * zPos;
+            float xPos = (float(i) - float(SQUARES_PER_SIDE) / 2.0f) * SCALE;
+            float zPos = (float(j) - float(SQUARES_PER_SIDE) / 2.0f) * SCALE;
+            float yPos = 0.0f;
 
             planeVertices[i * (SQUARES_PER_SIDE + 1) + j] = glm::vec3(xPos, yPos, zPos);
+        }
+    }
+}
+
+void getPlaneTexCoords(glm::vec2 planeTexCoords[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)]) {
+
+    float ratio = 1 / float(SQUARES_PER_SIDE);
+
+    for (int i = 0; i < SQUARES_PER_SIDE + 1; i++) {
+        for (int j = 0; j < SQUARES_PER_SIDE + 1; j++) {
+            planeTexCoords[i * (SQUARES_PER_SIDE + 1) + j] = glm::vec2(float(i) * ratio, float(j) * ratio);
         }
     }
 }
