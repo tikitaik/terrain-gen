@@ -13,7 +13,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_executable(terrain-gen ${CMAKE_SOURCE_DIR}/src/main.cpp ${CMAKE_SOURCE_DIR}/src/glad.c ${CMAKE_SOURCE_DIR}/src/shader.cpp)
+add_executable(terrain-gen 
+    ${CMAKE_SOURCE_DIR}/src/main.cpp
+    ${CMAKE_SOURCE_DIR}/src/glad.c 
+    ${CMAKE_SOURCE_DIR}/src/camera.cpp
+    ${CMAKE_SOURCE_DIR}/src/shader.cpp)
 
 target_include_directories(terrain-gen PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
