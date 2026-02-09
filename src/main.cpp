@@ -17,7 +17,8 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
 void processInput(GLFWwindow* window);
 
-void getPlaneVertices(glm::vec3 planeVertices[SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6]);
+void getPlaneVertices(glm::vec3 planeVertices[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)]);
+void getPlaneIndices(unsigned int planeIndices[SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6]);
 
 const unsigned int SCR_WIDTH = 1280;
 const unsigned int SCR_HEIGHT = 720;
@@ -86,8 +87,11 @@ int main() {
     glEnableVertexAttribArray(1);
     glBindVertexArray(0);
 
-    glm::vec3 planeVertices[SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6];
+    glm::vec3 planeVertices[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)];
+    unsigned int planeIndices[SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6];
+
     getPlaneVertices(planeVertices);
+    getPlaneIndices(planeIndices);
 
     unsigned int planeVAO, planeVBO;
     glGenVertexArrays(1, &planeVAO);
@@ -97,6 +101,13 @@ int main() {
     glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+
+    unsigned int planeEBO;
+    glGenBuffers(1, &planeEBO);
+    glBindVertexArray(planeVAO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, planeEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(planeIndices), planeIndices, GL_STATIC_DRAW);
+
     glBindVertexArray(0);
 
     std::string buildPath = "/home/edthi/Projects/terrain-gen/build/";
@@ -123,7 +134,7 @@ int main() {
         testShader.setMat4("view", view);
 
         glBindVertexArray(planeVAO);
-        glDrawArrays(GL_TRIANGLES, 0, SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6);
+        glDrawElements(GL_TRIANGLES, SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -165,32 +176,37 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
     camera.ProcessScroll(yoffset);
 }
 
-void getPlaneVertices(glm::vec3 planeVertices[SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6]) {
+void getPlaneVertices(glm::vec3 planeVertices[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)]) {
 
-    for (int i = 0; i < SQUARES_PER_SIDE; i++) {
-        for (int j = 0; j < SQUARES_PER_SIDE; j++) {
+    for (int i = 0; i < SQUARES_PER_SIDE + 1; i++) {
+        for (int j = 0; j < SQUARES_PER_SIDE + 1; j++) {
 
             float scale = 0.125f;
 
             float xPos = (float(i) - float(SQUARES_PER_SIDE) / 2.0f) * scale;
             float zPos = (float(j) - float(SQUARES_PER_SIDE) / 2.0f) * scale;
-            float offset = 1.0f * scale;
+            float yPos = xPos * xPos + zPos * zPos;
 
-            glm::vec3 point1(xPos, -1.0f, zPos);
-            glm::vec3 point2(xPos, -1.0f, zPos + offset);
-            glm::vec3 point3(xPos + offset, -1.0f, zPos + offset);
-            glm::vec3 point4 = point3;
-            glm::vec3 point5(xPos + offset, -1.0f, zPos);
-            glm::vec3 point6 = point1;
+            planeVertices[i * (SQUARES_PER_SIDE + 1) + j] = glm::vec3(xPos, yPos, zPos);
+        }
+    }
+}
 
-            int index = (i * SQUARES_PER_SIDE + j) * 6;
+void getPlaneIndices(unsigned int planeIndices[SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6]) {
+    for (unsigned int i = 0; i < SQUARES_PER_SIDE; i++) {
+        for (unsigned int j = 0; j < SQUARES_PER_SIDE; j++) {
 
-            planeVertices[index + 0] = point1;
-            planeVertices[index + 1] = point2;
-            planeVertices[index + 2] = point3;
-            planeVertices[index + 3] = point4;
-            planeVertices[index + 4] = point5;
-            planeVertices[index + 5] = point6;
+            unsigned int vertexIndex = i * (SQUARES_PER_SIDE + 1) + j;
+
+            unsigned int index = (i * SQUARES_PER_SIDE + j) * 6;
+
+            planeIndices[index + 0] = vertexIndex;
+            planeIndices[index + 1] = vertexIndex + SQUARES_PER_SIDE + 1;
+            planeIndices[index + 2] = vertexIndex + SQUARES_PER_SIDE + 2;
+
+            planeIndices[index + 3] = planeIndices[index + 2];
+            planeIndices[index + 4] = vertexIndex + 1;
+            planeIndices[index + 5] = planeIndices[index + 0];
         }
     }
 }
