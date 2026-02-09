@@ -8,13 +8,12 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_compile_options(-Wall)
 
-set(CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR})
 set(CMAKE_LIBRARY_PATH ${CMAKE_PREFIX_PATH}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_executable(terrain-gen ${CMAKE_SOURCE_DIR}/src/main.cpp ${CMAKE_SOURCE_DIR}/src/glad.c)
+add_executable(terrain-gen ${CMAKE_SOURCE_DIR}/src/main.cpp ${CMAKE_SOURCE_DIR}/src/glad.c ${CMAKE_SOURCE_DIR}/src/shader.cpp)
 
 target_include_directories(terrain-gen PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
