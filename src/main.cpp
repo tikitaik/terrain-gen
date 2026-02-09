@@ -89,10 +89,12 @@ int main() {
 
     getObjects();
 
-    Shader testShader(buildPath, "test");
     Shader noiseGenShader(buildPath, "noisegen");
+    Shader screenShader(buildPath, "screen");
+    Shader testShader(buildPath, "test");
 
-    testShader.use();
+    screenShader.use();
+    screenShader.setInt("tex", 0);
 
     glm::mat4 view = camera.GetViewMatrix();
 
@@ -110,21 +112,30 @@ int main() {
         
         glBindFramebuffer(GL_FRAMEBUFFER, noiseFBO);
         noiseGenShader.use();
+        noiseGenShader.setFloat("timeOffset", glfwGetTime());
         renderQuad();
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glClearColor(0.2f, 0.05f, 0.05f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, noiseTex);
 
         testShader.use();
-        testShader.setVec3("color", glm::vec3(0.5f, 0.5f, 0.2f));
         testShader.setMat4("projection", proj);
         testShader.setMat4("view", view);
         testShader.setInt("heightMap", 0);
 
         glBindVertexArray(planeVAO);
         glDrawElements(GL_TRIANGLES, SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6, GL_UNSIGNED_INT, 0);
-
+        
+/* 
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, screenTexture);
+        screenShader.use();
+        renderQuad();
+*/
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -254,7 +265,7 @@ void getObjects() {
 
     glGenTextures(1, &noiseTex);
     glBindTexture(GL_TEXTURE_2D, noiseTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, 512, 512, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_UNSIGNED_BYTE, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);	
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
