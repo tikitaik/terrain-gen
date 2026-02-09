@@ -8,42 +8,49 @@ const float RESOLUTION = 512.0f;
 float GRID_SIZE = 8.0f;
 
 float fade(float a);
-float perlinNoise();
+float perlinNoise(int octaves);
 float rand(vec2 st);
 vec2 rand2(vec2 p, float timeOffset);
 
 void main() {
-    FragColor = perlinNoise();
+    FragColor = perlinNoise(5);
 }
 
-float perlinNoise() {
+float perlinNoise(int octaves) {
+    
+    float result = 0.0f;
 
-    float CELL_SIZE = floor(RESOLUTION / GRID_SIZE);
+    for (int i = 0; i < octaves; i++) {
 
-    vec2 pos = (gl_FragCoord.xy) / CELL_SIZE;
+        float scale = 0.8f / pow(2, i);
+        float CELL_SIZE = floor(RESOLUTION / GRID_SIZE) * scale;
 
-    vec2 uv = fract(pos);
-    vec2 gridVec = floor(pos);
+        vec2 pos = (gl_FragCoord.xy) / CELL_SIZE;
 
-    vec2 bottomLeft  = gridVec;
-    vec2 bottomRight = gridVec + vec2(1.0f, 0.0f);
-    vec2 topLeft     = gridVec + vec2(0.0f, 1.0f);
-    vec2 topRight    = gridVec + vec2(1.0f, 1.0f);
+        vec2 uv = fract(pos);
+        vec2 gridVec = floor(pos);
 
-    vec2 randBottomLeft  = rand2(bottomLeft, timeOffset);
-    vec2 randBottomRight = rand2(bottomRight, timeOffset);
-    vec2 randTopLeft     = rand2(topLeft, timeOffset);
-    vec2 randTopRight    = rand2(topRight, timeOffset);
+        vec2 bottomLeft  = gridVec;
+        vec2 bottomRight = gridVec + vec2(1.0f, 0.0f);
+        vec2 topLeft     = gridVec + vec2(0.0f, 1.0f);
+        vec2 topRight    = gridVec + vec2(1.0f, 1.0f);
 
-    float dotBottomLeft  = dot(uv,  randBottomLeft);
-    float dotBottomRight = dot(uv - vec2(1.0f, 0.0f), randBottomRight);
-    float dotTopLeft     = dot(uv - vec2(0.0f, 1.0f), randTopLeft);
-    float dotTopRight    = dot(uv - vec2(1.0f, 1.0f), randTopRight);
+        vec2 randBottomLeft  = rand2(bottomLeft, timeOffset);
+        vec2 randBottomRight = rand2(bottomRight, timeOffset);
+        vec2 randTopLeft     = rand2(topLeft, timeOffset);
+        vec2 randTopRight    = rand2(topRight, timeOffset);
 
-    float u = fade(uv.x);
-    float v = fade(uv.y);
-    float result = mix(mix(dotBottomLeft, dotBottomRight, u), mix(dotTopLeft, dotTopRight, u), v);
-    return result;
+        float dotBottomLeft  = dot(uv,  randBottomLeft);
+        float dotBottomRight = dot(uv - vec2(1.0f, 0.0f), randBottomRight);
+        float dotTopLeft     = dot(uv - vec2(0.0f, 1.0f), randTopLeft);
+        float dotTopRight    = dot(uv - vec2(1.0f, 1.0f), randTopRight);
+
+        float u = fade(uv.x);
+        float v = fade(uv.y);
+        result += scale * mix(mix(dotBottomLeft, dotBottomRight, u), mix(dotTopLeft, dotTopRight, u), v);
+    }
+
+    return result * 0.5f + 0.5f;
 }
 
 float fade(float t) {

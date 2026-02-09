@@ -9,7 +9,7 @@
 #include "camera.hpp"
 #include "shader.hpp"
 
-#define SQUARES_PER_SIDE 256
+#define SQUARES_PER_SIDE 300
 #define SCALE 16 / SQUARES_PER_SIDE
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int size);
@@ -112,7 +112,7 @@ int main() {
         
         glBindFramebuffer(GL_FRAMEBUFFER, noiseFBO);
         noiseGenShader.use();
-        noiseGenShader.setFloat("timeOffset", glfwGetTime());
+        noiseGenShader.setFloat("timeOffset", 2 * glfwGetTime());
         renderQuad();
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -128,8 +128,7 @@ int main() {
 
         glBindVertexArray(planeVAO);
         glDrawElements(GL_TRIANGLES, SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6, GL_UNSIGNED_INT, 0);
-        
-/* 
+/*        
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, screenTexture);
