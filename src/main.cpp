@@ -1,5 +1,5 @@
-#include <cstddef>
 #include <iostream>
+#include <filesystem>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -24,6 +24,8 @@ void getPlaneVertices(glm::vec3 planeVertices[(SQUARES_PER_SIDE + 1) * (SQUARES_
 void getPlaneTexCoords(glm::vec2 planeTexCoords[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)]);
 void getPlaneIndices(unsigned int planeIndices[SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6]);
 
+std::string getBuildPath(std::string argv_0); 
+
 const unsigned int SCR_WIDTH = 1280;
 const unsigned int SCR_HEIGHT = 720;
 int framebufferWidth, framebufferHeight;
@@ -41,9 +43,7 @@ unsigned int triangleVAO, triangleVBO;
 unsigned int quadVAO, quadVBO;
 unsigned int planeVAO, planeVertexVBO, planeTexCoordsVBO, planeEBO;
 unsigned int noiseFBO, noiseTex;
-unsigned int screenFBO, screenTexture;
-
-std::string buildPath = "/home/edthi/Projects/terrain-gen/build/";
+unsigned int screenFBO, screenRBO, screenTexture;
 
 void renderQuad() {
     glBindVertexArray(quadVAO);
@@ -51,7 +51,7 @@ void renderQuad() {
     glBindVertexArray(0);
 }
 
-int main() {
+int main(int argc, char* argv[]) {
 
     // Window boilerplate
     glfwInit();
@@ -87,6 +87,8 @@ int main() {
     // GL config
     glEnable(GL_DEPTH_TEST);
 
+    const std::string buildPath = getBuildPath(argv[0]);
+
     getObjects();
 
     Shader noiseGenShader(buildPath, "noisegen");
@@ -115,9 +117,10 @@ int main() {
         noiseGenShader.setFloat("timeOffset", 2 * glfwGetTime());
         renderQuad();
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, screenFBO);
         glClearColor(0.2f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, noiseTex);
 
@@ -128,13 +131,12 @@ int main() {
 
         glBindVertexArray(planeVAO);
         glDrawElements(GL_TRIANGLES, SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6, GL_UNSIGNED_INT, 0);
-/*        
+
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, screenTexture);
         screenShader.use();
         renderQuad();
-*/
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -257,7 +259,16 @@ void getObjects() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screenTexture, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glGenRenderbuffers(1, &screenRBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, screenRBO);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, framebufferWidth, framebufferHeight);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, screenRBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "ERROR::FRAMEBUFFER:: Screen framebuffer is not complete!\n";
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);  
 
     glGenFramebuffers(1, &noiseFBO);
     glBindFramebuffer(GL_FRAMEBUFFER, noiseFBO);
@@ -271,6 +282,9 @@ void getObjects() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, noiseTex, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "ERROR::FRAMEBUFFER:: Noise framebuffer is not complete!\n";
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -316,4 +330,41 @@ void getPlaneIndices(unsigned int planeIndices[SQUARES_PER_SIDE * SQUARES_PER_SI
             planeIndices[index + 5] = planeIndices[index + 0];
         }
     }
+}
+
+std::string getBuildPath(std::string argv_0) {
+
+    // hehehe this will let us find executable location
+    std::string resPath = argv_0;
+    std::string cwd = std::filesystem::current_path().string();
+
+    std::string slash = "/";
+
+# ifdef _WIN32
+    slash = "\\";
+# endif
+
+    if (resPath.find(".") == 0) {
+        resPath.erase(0,1);
+    }
+
+    size_t last_slash_pos = resPath.find_last_of(slash);
+
+    if (last_slash_pos != std::string::npos) {
+        resPath.erase(last_slash_pos);
+    }
+
+    size_t resPathContainsCWD = resPath.find(cwd);
+    if (resPathContainsCWD != std::string::npos) {
+            return resPath + slash;
+    }
+
+# ifdef _WIN32
+    if (std::string(1, resPath[0]) != slash && std::string(1, cwd[cwd.length() - 1]) != slash) {
+        cwd = cwd + slash;
+    }
+# endif
+
+    std::string buildPath = cwd + resPath + slash;
+    return buildPath;
 }
