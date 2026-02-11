@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
     Shader testShader(buildPath, "test");
 
     glm::vec2 posOffset      = glm::vec2(0.0f);
-    glm::vec2 posOffsetDelta = glm::vec2(1.0f);
+    glm::vec2 posOffsetDelta = glm::vec2(0.8f);
 
     screenShader.use();
     screenShader.setInt("tex", 0);

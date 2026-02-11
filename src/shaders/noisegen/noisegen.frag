@@ -22,13 +22,15 @@ float perlinNoise(int octaves) {
 
     float frequency = 8.0f;
     float lacunarity = 2.0f;
-    float persistence = 0.8f;
+    float persistence = 0.6f;
 
     for (int i = 0; i < octaves; i++) {
 
         float CELL_SIZE = floor(RESOLUTION) / frequency;
 
         vec2 pos = (gl_FragCoord.xy) / CELL_SIZE + posOffset;
+        // scale pos to coords
+        //pos += posOffset * RESOLUTION / CELL_SIZE;
 
         vec2 uv = fract(pos);
         vec2 gridVec = floor(pos);
