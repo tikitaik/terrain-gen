@@ -2,10 +2,10 @@
 
 out float FragColor;
 
+uniform vec2  posOffset;
 uniform float timeOffset;
 
 const float RESOLUTION = 512.0f;
-float GRID_SIZE = 8.0f;
 
 float fade(float a);
 float perlinNoise(int octaves);
@@ -13,19 +13,22 @@ float rand(vec2 st);
 vec2 rand2(vec2 p, float timeOffset);
 
 void main() {
-    FragColor = perlinNoise(5);
+    FragColor = perlinNoise(5) * 0.5f + 0.5f;
 }
 
 float perlinNoise(int octaves) {
     
-    float result = 0.0f;
+    float noiseValue = 0.0f;
+
+    float frequency = 8.0f;
+    float lacunarity = 2.0f;
+    float persistence = 0.8f;
 
     for (int i = 0; i < octaves; i++) {
 
-        float scale = 0.8f / pow(2, i);
-        float CELL_SIZE = floor(RESOLUTION / GRID_SIZE) * scale;
+        float CELL_SIZE = floor(RESOLUTION) / frequency;
 
-        vec2 pos = (gl_FragCoord.xy) / CELL_SIZE;
+        vec2 pos = (gl_FragCoord.xy) / CELL_SIZE + posOffset;
 
         vec2 uv = fract(pos);
         vec2 gridVec = floor(pos);
@@ -47,10 +50,15 @@ float perlinNoise(int octaves) {
 
         float u = fade(uv.x);
         float v = fade(uv.y);
-        result += scale * mix(mix(dotBottomLeft, dotBottomRight, u), mix(dotTopLeft, dotTopRight, u), v);
+        float perlinValue = mix(mix(dotBottomLeft, dotBottomRight, u), mix(dotTopLeft, dotTopRight, u), v);
+
+        noiseValue += perlinValue * persistence;
+
+        frequency *= lacunarity;
+        persistence *= persistence;
     }
 
-    return result * 0.5f + 0.5f;
+    return noiseValue;
 }
 
 float fade(float t) {

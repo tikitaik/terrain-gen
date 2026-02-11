@@ -11,8 +11,8 @@ uniform sampler2D heightMap;
 
 void main() {
 
-    float height = texture(heightMap, aTexCoords).r * 5.0f;
-    Color = vec3(height / 5.0f);
+    float height = texture(heightMap, aTexCoords).r * 1.0f;
+    Color = vec3(height / 1.0f);
     vec3 pos = aPos;
     pos.y = height;
     gl_Position = projection * view * vec4(pos, 1.0f);

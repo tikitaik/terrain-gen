@@ -15,19 +15,21 @@
 #define SQUARES_PER_SIDE 300
 #define SCALE 16 / SQUARES_PER_SIDE
 
+void processInput(GLFWwindow* window);
+void renderScreenFBO(Shader screenShader, unsigned int textureToRender);
+
+void getObjects();
+
+void getPlaneIndices(unsigned int planeIndices[SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6]);
+void getPlaneTexCoords(glm::vec2 planeTexCoords[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)]);
+void getPlaneVertices(glm::vec3 planeVertices[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)]);
+
+std::string getBuildPath(std::string argv_0); 
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int size);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos); 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset); 
 
-void processInput(GLFWwindow* window);
-
-void getObjects();
-
-void getPlaneVertices(glm::vec3 planeVertices[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)]);
-void getPlaneTexCoords(glm::vec2 planeTexCoords[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)]);
-void getPlaneIndices(unsigned int planeIndices[SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6]);
-
-std::string getBuildPath(std::string argv_0); 
 int framebufferWidth, framebufferHeight;
 
 float deltaTime = 0.0f;
@@ -95,6 +97,9 @@ int main(int argc, char* argv[]) {
     Shader screenShader(buildPath, "screen");
     Shader testShader(buildPath, "test");
 
+    glm::vec2 posOffset      = glm::vec2(0.0f);
+    glm::vec2 posOffsetDelta = glm::vec2(1.0f);
+
     screenShader.use();
     screenShader.setInt("tex", 0);
 
@@ -108,13 +113,11 @@ int main(int argc, char* argv[]) {
 
         processInput(window);
         view = camera.GetViewMatrix();
-
-        glClearColor(0.2f, 0.05f, 0.05f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         glBindFramebuffer(GL_FRAMEBUFFER, noiseFBO);
         noiseGenShader.use();
-        noiseGenShader.setFloat("timeOffset", 2 * glfwGetTime());
+        noiseGenShader.setVec2("posOffset", posOffset += posOffsetDelta * deltaTime);
+        noiseGenShader.setFloat("timeOffset", 0);
         renderQuad();
 
         glBindFramebuffer(GL_FRAMEBUFFER, screenFBO);
@@ -132,21 +135,15 @@ int main(int argc, char* argv[]) {
         glBindVertexArray(planeVAO);
         glDrawElements(GL_TRIANGLES, SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6, GL_UNSIGNED_INT, 0);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, screenTexture);
-        screenShader.use();
-        renderQuad();
+        renderScreenFBO(screenShader, noiseTex);
+        renderScreenFBO(screenShader, screenTexture);
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
     glfwTerminate();
     return 0;
-}
-
-void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-    glViewport(0, 0, width, height);
 }
 
 void processInput(GLFWwindow* window) {
@@ -169,12 +166,24 @@ void processInput(GLFWwindow* window) {
         camera.ProcessKeyboard(DOWN, deltaTime);
 }
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
-    camera.ProcessMouse(xpos, ypos);
-}
+void renderScreenFBO(Shader screenShader, unsigned int textureToRender) {
 
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
-    camera.ProcessScroll(yoffset);
+    int texWidth, texHeight;
+    int miplevel = 0;
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textureToRender);
+
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, miplevel, GL_TEXTURE_WIDTH, &texWidth);
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, miplevel, GL_TEXTURE_HEIGHT, &texHeight);
+    //glViewport(0, 0, texWidth, texHeight);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClearColor(0.2f, 0.05f, 0.05f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    screenShader.use();
+    renderQuad();
 }
 
 void getObjects() {
@@ -288,31 +297,6 @@ void getObjects() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void getPlaneVertices(glm::vec3 planeVertices[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)]) {
-
-    for (int i = 0; i < SQUARES_PER_SIDE + 1; i++) {
-        for (int j = 0; j < SQUARES_PER_SIDE + 1; j++) {
-
-            float xPos = (float(i) - float(SQUARES_PER_SIDE) / 2.0f) * SCALE;
-            float zPos = (float(j) - float(SQUARES_PER_SIDE) / 2.0f) * SCALE;
-            float yPos = 0.0f;
-
-            planeVertices[i * (SQUARES_PER_SIDE + 1) + j] = glm::vec3(xPos, yPos, zPos);
-        }
-    }
-}
-
-void getPlaneTexCoords(glm::vec2 planeTexCoords[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)]) {
-
-    float ratio = 1 / float(SQUARES_PER_SIDE);
-
-    for (int i = 0; i < SQUARES_PER_SIDE + 1; i++) {
-        for (int j = 0; j < SQUARES_PER_SIDE + 1; j++) {
-            planeTexCoords[i * (SQUARES_PER_SIDE + 1) + j] = glm::vec2(float(i) * ratio, float(j) * ratio);
-        }
-    }
-}
-
 void getPlaneIndices(unsigned int planeIndices[SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6]) {
     for (unsigned int i = 0; i < SQUARES_PER_SIDE; i++) {
         for (unsigned int j = 0; j < SQUARES_PER_SIDE; j++) {
@@ -328,6 +312,31 @@ void getPlaneIndices(unsigned int planeIndices[SQUARES_PER_SIDE * SQUARES_PER_SI
             planeIndices[index + 3] = planeIndices[index + 2];
             planeIndices[index + 4] = vertexIndex + 1;
             planeIndices[index + 5] = planeIndices[index + 0];
+        }
+    }
+}
+
+void getPlaneTexCoords(glm::vec2 planeTexCoords[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)]) {
+
+    float ratio = 1 / float(SQUARES_PER_SIDE);
+
+    for (int i = 0; i < SQUARES_PER_SIDE + 1; i++) {
+        for (int j = 0; j < SQUARES_PER_SIDE + 1; j++) {
+            planeTexCoords[i * (SQUARES_PER_SIDE + 1) + j] = glm::vec2(float(i) * ratio, float(j) * ratio);
+        }
+    }
+}
+
+void getPlaneVertices(glm::vec3 planeVertices[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)]) {
+
+    for (int i = 0; i < SQUARES_PER_SIDE + 1; i++) {
+        for (int j = 0; j < SQUARES_PER_SIDE + 1; j++) {
+
+            float xPos = (float(i) - float(SQUARES_PER_SIDE) / 2.0f) * SCALE;
+            float zPos = (float(j) - float(SQUARES_PER_SIDE) / 2.0f) * SCALE;
+            float yPos = 0.0f;
+
+            planeVertices[i * (SQUARES_PER_SIDE + 1) + j] = glm::vec3(xPos, yPos, zPos);
         }
     }
 }
@@ -367,4 +376,16 @@ std::string getBuildPath(std::string argv_0) {
 
     std::string buildPath = cwd + resPath + slash;
     return buildPath;
+}
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+    glViewport(0, 0, width, height);
+}
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+    camera.ProcessMouse(xpos, ypos);
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+    camera.ProcessScroll(yoffset);
 }
