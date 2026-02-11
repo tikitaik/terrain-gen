@@ -16,4 +16,4 @@ void main() {
     vec3 pos = aPos;
     pos.y = height;
     gl_Position = projection * view * vec4(pos, 1.0f);
-};
+}

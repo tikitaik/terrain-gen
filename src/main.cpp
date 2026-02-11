@@ -9,6 +9,9 @@
 #include "camera.hpp"
 #include "shader.hpp"
 
+#define SCR_WIDTH 1280
+#define SCR_HEIGHT 720
+
 #define SQUARES_PER_SIDE 300
 #define SCALE 16 / SQUARES_PER_SIDE
 
@@ -25,9 +28,6 @@ void getPlaneTexCoords(glm::vec2 planeTexCoords[(SQUARES_PER_SIDE + 1) * (SQUARE
 void getPlaneIndices(unsigned int planeIndices[SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6]);
 
 std::string getBuildPath(std::string argv_0); 
-
-const unsigned int SCR_WIDTH = 1280;
-const unsigned int SCR_HEIGHT = 720;
 int framebufferWidth, framebufferHeight;
 
 float deltaTime = 0.0f;
