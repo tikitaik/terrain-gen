@@ -8,32 +8,45 @@ uniform float timeOffset;
 const float RESOLUTION = 512.0f;
 
 float fade(float a);
-float perlinNoise(vec2 offset, int octaves);
+float domainWarpFBM(vec2 pos);
+float perlinNoise(vec2 posIn);
 float rand(vec2 st);
 vec2 rand2(vec2 p, float timeOffset);
 
 void main() {
 
-    vec2 pos = (gl_FragCoord.xy) / RESOLUTION + posOffset;
-    vec2 domWarp = vec2(1.0f, 2.2f);
+    vec2 pos = (gl_FragCoord.xy) / RESOLUTION /*+ posOffset*/;
+    pos += posOffset;
 
-    float noise_0 = perlinNoise(pos, 5);
-    float noise_1 = perlinNoise(pos + domWarp, 5);
-
-    FragColor = perlinNoise(vec2(noise_0, noise_1), 5);
+    FragColor = domainWarpFBM(pos);
+    //FragColor = FragColor * 0.5f + 0.5f;
 }
 
-float perlinNoise(vec2 offset, int octaves) {
+float domainWarpFBM(vec2 pos) {
+
+    vec2 domWarp = vec2(1.0f, 2.2f);
+
+    float fbm1 = perlinNoise(pos);
+    float fbm2 = perlinNoise(pos + domWarp);
+
+    float fbm3 = perlinNoise(pos * 4.0f * fbm1 + vec2(1.7f, 9.2f));
+    float fbm4 = perlinNoise(pos * 4.0f * fbm2 + vec2(8.3f, 2.8f));
+ 
+    return perlinNoise(vec2(fbm3, fbm4));
+}
+
+float perlinNoise(vec2 posIn) {
     
     float noiseValue = 0.0f;
 
-    float frequency = 2.0f;
+    int octaves = 5;
+    float frequency = 1.0f;
     float lacunarity = 2.0f;
     float persistence = 0.8f;
 
     for (int i = 0; i < octaves; i++) {
 
-        vec2 pos = offset * frequency;
+        vec2 pos = posIn * frequency;
         pos += posOffset;
 
         vec2 uv = fract(pos);

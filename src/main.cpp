@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
         glBindFramebuffer(GL_FRAMEBUFFER, noiseFBO);
         noiseGenShader.use();
         noiseGenShader.setVec2("posOffset", posOffset += posOffsetDelta * deltaTime);
-        noiseGenShader.setFloat("timeOffset", 0);
+        noiseGenShader.setFloat("timeOffset", 0.6f * glfwGetTime());
         renderQuad();
 
         glBindFramebuffer(GL_FRAMEBUFFER, screenFBO);
@@ -284,7 +284,7 @@ void getObjects() {
 
     glGenTextures(1, &noiseTex);
     glBindTexture(GL_TEXTURE_2D, noiseTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_UNSIGNED_BYTE, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 512, 512, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);	
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
