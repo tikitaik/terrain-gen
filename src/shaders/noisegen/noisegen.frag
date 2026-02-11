@@ -15,9 +15,10 @@ vec2 rand2(vec2 p, float timeOffset);
 void main() {
 
     vec2 pos = (gl_FragCoord.xy) / RESOLUTION + posOffset;
+    vec2 domWarp = vec2(1.0f, 2.2f);
 
     float noise_0 = perlinNoise(pos, 5);
-    float noise_1 = perlinNoise(pos + vec2(1.0f, 4.2f), 5);
+    float noise_1 = perlinNoise(pos + domWarp, 5);
 
     FragColor = perlinNoise(vec2(noise_0, noise_1), 5);
 }
@@ -26,14 +27,14 @@ float perlinNoise(vec2 offset, int octaves) {
     
     float noiseValue = 0.0f;
 
-    float frequency = 8.0f;
+    float frequency = 2.0f;
     float lacunarity = 2.0f;
     float persistence = 0.8f;
 
     for (int i = 0; i < octaves; i++) {
 
         vec2 pos = offset * frequency;
-        //pos += posOffset;
+        pos += posOffset;
 
         vec2 uv = fract(pos);
         vec2 gridVec = floor(pos);
