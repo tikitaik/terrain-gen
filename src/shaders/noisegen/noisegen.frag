@@ -7,77 +7,114 @@ uniform float timeOffset;
 
 const float RESOLUTION = 512.0f;
 
+float domainWarpFBM(vec2 st);
+float fbm(vec2 st);
+float perlin(vec2 st);
+float ridge(vec2 st);
+float turbulence(vec2 st);
+
 float fade(float a);
-float domainWarpFBM(vec2 pos);
-float perlinNoise(vec2 posIn);
 float rand(vec2 st);
 vec2 rand2(vec2 p, float timeOffset);
 
 void main() {
 
-    vec2 pos = (gl_FragCoord.xy) / RESOLUTION /*+ posOffset*/;
-    pos += posOffset;
+    vec2 st = (gl_FragCoord.xy) / RESOLUTION;
+    //st += posOffset;
 
-    FragColor = domainWarpFBM(pos);
+    FragColor = ridge(st);
     //FragColor = FragColor * 0.5f + 0.5f;
 }
 
-float domainWarpFBM(vec2 pos) {
+float domainWarpFBM(vec2 st) {
 
-    vec2 domWarp = vec2(1.0f, 2.2f);
+    vec2 domWarp = vec2(1.1f, -3.2f);
 
-    float fbm1 = perlinNoise(pos);
-    float fbm2 = perlinNoise(pos + domWarp);
+    float fbm1 = fbm(st);
+    float fbm2 = fbm(st + domWarp);
 
-    float fbm3 = perlinNoise(pos * 4.0f * fbm1 + vec2(1.7f, 9.2f));
-    float fbm4 = perlinNoise(pos * 4.0f * fbm2 + vec2(8.3f, 2.8f));
+    float fbm3 = fbm(st * 4.0f * fbm1 + vec2(1.7f, 9.2f));
+    float fbm4 = fbm(st * 4.0f * fbm2 + vec2(8.3f, 2.8f));
  
-    return perlinNoise(vec2(fbm3, fbm4));
+    return fbm(vec2(fbm3, fbm4));
 }
 
-float perlinNoise(vec2 posIn) {
-    
-    float noiseValue = 0.0f;
+float fbm(vec2 st) {
+
+    float value = 0.0f;
 
     int octaves = 5;
-    float frequency = 1.0f;
+    float frequency = 8.0f;
     float lacunarity = 2.0f;
     float persistence = 0.8f;
 
+    vec2 pos = st * frequency;
+    //pos += posOffset;
+
     for (int i = 0; i < octaves; i++) {
 
-        vec2 pos = posIn * frequency;
-        pos += posOffset;
-
-        vec2 uv = fract(pos);
-        vec2 gridVec = floor(pos);
-
-        vec2 bottomLeft  = gridVec;
-        vec2 bottomRight = gridVec + vec2(1.0f, 0.0f);
-        vec2 topLeft     = gridVec + vec2(0.0f, 1.0f);
-        vec2 topRight    = gridVec + vec2(1.0f, 1.0f);
-
-        vec2 randBottomLeft  = rand2(bottomLeft, timeOffset);
-        vec2 randBottomRight = rand2(bottomRight, timeOffset);
-        vec2 randTopLeft     = rand2(topLeft, timeOffset);
-        vec2 randTopRight    = rand2(topRight, timeOffset);
-
-        float dotBottomLeft  = dot(uv,  randBottomLeft);
-        float dotBottomRight = dot(uv - vec2(1.0f, 0.0f), randBottomRight);
-        float dotTopLeft     = dot(uv - vec2(0.0f, 1.0f), randTopLeft);
-        float dotTopRight    = dot(uv - vec2(1.0f, 1.0f), randTopRight);
-
-        float u = fade(uv.x);
-        float v = fade(uv.y);
-        float perlinValue = mix(mix(dotBottomLeft, dotBottomRight, u), mix(dotTopLeft, dotTopRight, u), v);
-
-        noiseValue += perlinValue * persistence;
-
-        frequency *= lacunarity;
+        value += perlin(pos) * persistence;
+        pos *= lacunarity;
         persistence *= persistence;
     }
 
-    return noiseValue;
+    return value;
+}
+
+float perlin(vec2 st) {
+
+    vec2 uv = fract(st);
+    vec2 gridVec = floor(st);
+
+    vec2 bottomLeft  = gridVec;
+    vec2 bottomRight = gridVec + vec2(1.0f, 0.0f);
+    vec2 topLeft     = gridVec + vec2(0.0f, 1.0f);
+    vec2 topRight    = gridVec + vec2(1.0f, 1.0f);
+
+    vec2 randBottomLeft  = rand2(bottomLeft, timeOffset);
+    vec2 randBottomRight = rand2(bottomRight, timeOffset);
+    vec2 randTopLeft     = rand2(topLeft, timeOffset);
+    vec2 randTopRight    = rand2(topRight, timeOffset);
+
+    float dotBottomLeft  = dot(uv,  randBottomLeft);
+    float dotBottomRight = dot(uv - vec2(1.0f, 0.0f), randBottomRight);
+    float dotTopLeft     = dot(uv - vec2(0.0f, 1.0f), randTopLeft);
+    float dotTopRight    = dot(uv - vec2(1.0f, 1.0f), randTopRight);
+
+    float u = fade(uv.x);
+    float v = fade(uv.y);
+
+    return mix(mix(dotBottomLeft, dotBottomRight, u), mix(dotTopLeft, dotTopRight, u), v);
+}
+
+float ridge(vec2 st) {
+
+    float offset = 1.0f;
+    float value = turbulence(st);
+    value = offset - value;
+    value = pow(value, 5);
+    return value;
+}
+
+float turbulence(vec2 st) {
+
+    float amp = 0.5f;
+    float frequency = 8.0f;
+    float lacunarity = 2.0f;
+    int octaves = 5;
+
+    float value = 0;
+
+    st *= frequency;
+
+    for (int i = 0; i < octaves; i++) {
+        
+        value += amp * abs(perlin(st));
+        st *= lacunarity;
+        amp *= 0.5f;
+    }
+
+    return value;
 }
 
 float fade(float t) {

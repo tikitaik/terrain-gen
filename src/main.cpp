@@ -136,7 +136,7 @@ int main(int argc, char* argv[]) {
         glDrawElements(GL_TRIANGLES, SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6, GL_UNSIGNED_INT, 0);
 
         renderScreenFBO(screenShader, noiseTex);
-        //renderScreenFBO(screenShader, screenTexture);
+        renderScreenFBO(screenShader, screenTexture);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
