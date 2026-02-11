@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
     Shader testShader(buildPath, "test");
 
     glm::vec2 posOffset      = glm::vec2(0.0f);
-    glm::vec2 posOffsetDelta = glm::vec2(0.8f);
+    glm::vec2 posOffsetDelta = glm::vec2(0.1f);
 
     screenShader.use();
     screenShader.setInt("tex", 0);
@@ -136,7 +136,7 @@ int main(int argc, char* argv[]) {
         glDrawElements(GL_TRIANGLES, SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6, GL_UNSIGNED_INT, 0);
 
         renderScreenFBO(screenShader, noiseTex);
-        renderScreenFBO(screenShader, screenTexture);
+        //renderScreenFBO(screenShader, screenTexture);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
