@@ -12,8 +12,10 @@
 #define SCR_WIDTH 1280
 #define SCR_HEIGHT 720
 
-#define SQUARES_PER_SIDE 300
-#define SCALE 16 / SQUARES_PER_SIDE
+#define SQUARES_PER_SIDE 128
+#define SCALE 48 / SQUARES_PER_SIDE
+
+#define TEX_RES 64
 
 void processInput(GLFWwindow* window);
 void renderScreenFBO(Shader screenShader, unsigned int textureToRender);
@@ -118,6 +120,7 @@ int main(int argc, char* argv[]) {
         noiseGenShader.use();
         noiseGenShader.setVec2("posOffset", posOffset += posOffsetDelta * deltaTime);
         noiseGenShader.setFloat("timeOffset", 0.6f * glfwGetTime());
+        noiseGenShader.setFloat("TEX_RES", float(TEX_RES));
         renderQuad();
 
         glBindFramebuffer(GL_FRAMEBUFFER, screenFBO);
@@ -284,7 +287,7 @@ void getObjects() {
 
     glGenTextures(1, &noiseTex);
     glBindTexture(GL_TEXTURE_2D, noiseTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 512, 512, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, TEX_RES, TEX_RES, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);	
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

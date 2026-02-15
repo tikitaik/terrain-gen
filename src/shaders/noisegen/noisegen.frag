@@ -2,10 +2,11 @@
 
 out float FragColor;
 
+uniform float TEX_RES;
+
 uniform vec2  posOffset;
 uniform float timeOffset;
 
-const float RESOLUTION = 512.0f;
 
 float domainWarpFBM(vec2 st);
 float fbm(vec2 st);
@@ -19,7 +20,7 @@ vec2 rand2(vec2 p, float timeOffset);
 
 void main() {
 
-    vec2 st = (gl_FragCoord.xy) / RESOLUTION;
+    vec2 st = (gl_FragCoord.xy) / TEX_RES;
     //st += posOffset;
 
     FragColor = ridge(st);
@@ -99,7 +100,7 @@ float ridge(vec2 st) {
 float turbulence(vec2 st) {
 
     float amp = 0.5f;
-    float frequency = 8.0f;
+    float frequency = 2.0f;
     float lacunarity = 2.0f;
     int octaves = 5;
 
