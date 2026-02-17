@@ -15,7 +15,7 @@
 #define SQUARES_PER_SIDE 128
 #define SCALE 48 / SQUARES_PER_SIDE
 
-#define TEX_RES 64
+#define TEX_RES 720
 
 void processInput(GLFWwindow* window);
 void renderScreenFBO(Shader screenShader, unsigned int textureToRender);
@@ -138,7 +138,7 @@ int main(int argc, char* argv[]) {
         glBindVertexArray(planeVAO);
         glDrawElements(GL_TRIANGLES, SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6, GL_UNSIGNED_INT, 0);
 
-        renderScreenFBO(screenShader, noiseTex);
+        //renderScreenFBO(screenShader, noiseTex);
         renderScreenFBO(screenShader, screenTexture);
 
         glfwSwapBuffers(window);

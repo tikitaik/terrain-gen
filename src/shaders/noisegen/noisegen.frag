@@ -21,9 +21,9 @@ vec2 rand2(vec2 p, float timeOffset);
 void main() {
 
     vec2 st = (gl_FragCoord.xy) / TEX_RES;
-    //st += posOffset;
+    st += posOffset;
 
-    FragColor = ridge(st);
+    FragColor = ridge(st) + 0.5f * fbm(st);
     //FragColor = FragColor * 0.5f + 0.5f;
 }
 
@@ -45,12 +45,11 @@ float fbm(vec2 st) {
     float value = 0.0f;
 
     int octaves = 5;
-    float frequency = 8.0f;
+    float frequency = 4.0f;
     float lacunarity = 2.0f;
     float persistence = 0.8f;
 
     vec2 pos = st * frequency;
-    //pos += posOffset;
 
     for (int i = 0; i < octaves; i++) {
 
