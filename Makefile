@@ -1,6 +1,13 @@
-SOURCE_DIR = src
+SOURCE_DIR = .
 BUILD_DIR  = build
+GENERATOR = "MinGW Makefiles"
 
 all:
-	cmake -S . -B build
-	cmake --build build
+
+ifeq ($(OS), Windows_NT)
+	cmake -S $(SOURCE_DIR) -B $(BUILD_DIR) -G $(GENERATOR) 
+else 
+	cmake -S $(SOURCE_DIR) -B $(BUILD_DIR)
+endif
+
+	cmake --build $(BUILD_DIR)
