@@ -138,7 +138,7 @@ int main(int argc, char* argv[]) {
         glBindVertexArray(planeVAO);
         glDrawElements(GL_TRIANGLES, SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6, GL_UNSIGNED_INT, 0);
 
-        //renderScreenFBO(screenShader, noiseTex);
+        renderScreenFBO(screenShader, noiseTex);
         renderScreenFBO(screenShader, screenTexture);
 
         glfwSwapBuffers(window);

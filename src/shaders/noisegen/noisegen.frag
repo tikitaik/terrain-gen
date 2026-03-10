@@ -13,6 +13,7 @@ float fbm(vec2 st);
 float perlin(vec2 st);
 float ridge(vec2 st);
 float turbulence(vec2 st);
+float voronoiNoise(vec2 st); 
 
 float fade(float a);
 float rand(vec2 st);
@@ -21,11 +22,12 @@ vec2 rand2(vec2 p, float timeOffset);
 void main() {
 
     vec2 st = (gl_FragCoord.xy) / TEX_RES;
-    st += posOffset;
+    //st += posOffset;
 
     //FragColor = ridge(st) + 0.5f * fbm(st);
-    FragColor = fbm(st);
-    FragColor = FragColor * 0.5f + 0.5f;
+    //FragColor = fbm(st);
+    //FragColor = FragColor * 0.5f + 0.5f;
+    FragColor = voronoiNoise(st);
 }
 
 float domainWarpFBM(vec2 st) {
@@ -118,17 +120,64 @@ float turbulence(vec2 st) {
     return value;
 }
 
+float voronoiNoise(vec2 st) {
+
+    const int SCALE_X = 16;
+    const int SCALE_Y = 16;
+    const float scaleX = float(SCALE_X);
+    const float scaleY = float(SCALE_Y);
+
+    // get points per frag (ew)
+    vec2 randomPoints[SCALE_X * SCALE_Y];
+    for (int i = 0; i < SCALE_X; i++) {
+        for (int j = 0; j < SCALE_Y; j++) {
+            // should be deterministic
+            randomPoints[i * SCALE_X + j] = rand2(vec2(float(i), float(j)), timeOffset);
+        }
+    }
+
+    // note we are using coordinate space of (0 to cellCountX, 0 to cellCountY)
+    int cellX = int(floor(st.x * scaleX));
+    int cellY = int(floor(st.y * scaleY));
+
+    // find closest point out of surrounding cells
+    int closestPointIndex = -1;
+    float closestPointDist = -1;
+
+    for (int i = -1; i <= 1; i++) {
+        for (int j = -1; j <= 1; j++) {
+
+            int currentIndex = (cellX + i) * SCALE_X + cellY + j;
+
+            if (currentIndex < 0 || currentIndex >= SCALE_X * SCALE_Y) {
+                continue;
+            }
+            // normalize so that point is always in the cell
+            vec2 offsetVec = randomPoints[currentIndex] * 0.5f + 0.5f;
+            vec2 randomPointPos = vec2(float(cellX + i), float(cellY + j)) + offsetVec;
+            vec2 currentPoint = vec2(st.x * scaleX, st.y * scaleY);
+            float currentDist = length(currentPoint - randomPointPos);
+            // update if distance shorter
+            if (currentDist < closestPointDist || closestPointIndex == -1) {
+                closestPointIndex = currentIndex;
+                closestPointDist = currentDist;
+            }
+        }
+    }
+    return closestPointDist;
+}
+
 float fade(float t) {
     return ((6 * t - 15) * t + 10) * t * t * t;
 }
 
 float rand(vec2 st){
-    return fract(sin(dot(st.xy ,vec2(12.9898,78.233))) * 43758.5453);
+    return fract(sin(dot(st.xy + 0.01f,vec2(12.9898,78.233))) * 43758.5453);
 }
 
 vec2 rand2(vec2 p, float timeOffset){
-    float a = fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-    float b = fract(sin(dot(p, vec2(269.5, 183.3))) * 43758.5453);
+    float a = fract(sin(dot(p + 12.0422, vec2(127.1, 311.7))) * 43758.5453);
+    float b = fract(sin(dot(p + 5.73223, vec2(269.5, 183.3))) * 43758.5453);
     vec2 grad = sin(vec2(a, b));
     grad *= 43758.5453;
     return sin(grad + timeOffset);
