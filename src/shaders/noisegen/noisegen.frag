@@ -24,10 +24,10 @@ void main() {
     vec2 st = (gl_FragCoord.xy) / TEX_RES;
     //st += posOffset;
 
-    //FragColor = ridge(st) + 0.5f * fbm(st);
+    FragColor = ridge(st) + 0.5f * fbm(st);
     //FragColor = fbm(st);
     //FragColor = FragColor * 0.5f + 0.5f;
-    FragColor = voronoiNoise(st);
+    //FragColor = voronoiNoise(st);
 }
 
 float domainWarpFBM(vec2 st) {

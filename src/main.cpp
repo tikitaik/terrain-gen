@@ -7,15 +7,16 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "camera.hpp"
+#include "glm/fwd.hpp"
 #include "shader.hpp"
 
 #define SCR_WIDTH 1280
 #define SCR_HEIGHT 720
 
-#define SQUARES_PER_SIDE 128
+#define SQUARES_PER_SIDE 2048
 #define SCALE 48 / SQUARES_PER_SIDE
 
-#define TEX_RES 720
+#define TEX_RES 4096
 
 void processInput(GLFWwindow* window);
 void renderScreenFBO(Shader screenShader, unsigned int textureToRender);
@@ -117,12 +118,14 @@ int main(int argc, char* argv[]) {
         view = camera.GetViewMatrix();
         
         glBindFramebuffer(GL_FRAMEBUFFER, noiseFBO);
+        glViewport(0, 0, TEX_RES, TEX_RES);
         noiseGenShader.use();
         noiseGenShader.setVec2("posOffset", posOffset += posOffsetDelta * deltaTime);
         noiseGenShader.setFloat("timeOffset", 0.6f * glfwGetTime());
         noiseGenShader.setFloat("TEX_RES", float(TEX_RES));
         renderQuad();
 
+        glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
         glBindFramebuffer(GL_FRAMEBUFFER, screenFBO);
         glClearColor(0.2f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -138,7 +141,7 @@ int main(int argc, char* argv[]) {
         glBindVertexArray(planeVAO);
         glDrawElements(GL_TRIANGLES, SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6, GL_UNSIGNED_INT, 0);
 
-        renderScreenFBO(screenShader, noiseTex);
+        //renderScreenFBO(screenShader, noiseTex);
         renderScreenFBO(screenShader, screenTexture);
 
         glfwSwapBuffers(window);
@@ -232,9 +235,12 @@ void getObjects() {
     glBindVertexArray(0);
 
     // plane //
-    glm::vec3 planeVertices[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)];
-    glm::vec2 planeTexCoords[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)];
-    unsigned int planeIndices[SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6];
+    glm::vec3* planeVertices = new glm::vec3[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)];
+    glm::vec2* planeTexCoords = new glm::vec2[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)];
+    unsigned int* planeIndices = new unsigned int[SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6];
+
+    size_t GRID_POINT_COUNT = (SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1);
+    size_t SQUARE_COUNT = SQUARES_PER_SIDE * SQUARES_PER_SIDE;
 
     getPlaneVertices(planeVertices);
     getPlaneTexCoords(planeTexCoords);
@@ -245,20 +251,20 @@ void getObjects() {
 
     glGenBuffers(1, &planeVertexVBO);
     glBindBuffer(GL_ARRAY_BUFFER, planeVertexVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * GRID_POINT_COUNT, planeVertices, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
     glGenBuffers(1, &planeTexCoordsVBO);
     glBindBuffer(GL_ARRAY_BUFFER, planeTexCoordsVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(planeTexCoords), planeTexCoords, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * GRID_POINT_COUNT, planeTexCoords, GL_STATIC_DRAW);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(1);
 
     glGenBuffers(1, &planeEBO);
     glBindVertexArray(planeVAO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, planeEBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(planeIndices), planeIndices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * SQUARE_COUNT * 6, planeIndices, GL_STATIC_DRAW);
     glBindVertexArray(0);
 
     glGenFramebuffers(1, &screenFBO);
@@ -301,6 +307,7 @@ void getObjects() {
 }
 
 void getPlaneIndices(unsigned int planeIndices[SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6]) {
+
     for (unsigned int i = 0; i < SQUARES_PER_SIDE; i++) {
         for (unsigned int j = 0; j < SQUARES_PER_SIDE; j++) {
 

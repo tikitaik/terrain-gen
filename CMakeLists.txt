@@ -6,7 +6,7 @@ set(CMAKE_C_COMPILER gcc)
 set(CMAKE_CXX_COMPILER g++)
 set(CMAKE_CXX_STANDARD 17)
 
-add_compile_options(-Wall)
+add_compile_options(-Wall -g)
 
 set(CMAKE_LIBRARY_PATH ${CMAKE_SOURCE_DIR}/lib)
 
