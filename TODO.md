@@ -18,10 +18,9 @@
 [Acerola Sculpting Terrain with Math](https://www.youtube.com/watch?v=J1OdPrO7GD0)  
 
 # List of Algorithms to Consider
-Ants & Slime  
-Cellular Automata  
-Diamond Square  
-Genetic Algorithms  
-Simplex  
-Voronoi Noise  
-Wave Function Collapse  
+- Ants & Slime
+- Cellular Automata
+- Diamond Square
+- Genetic Algorithms
+- Simplex
+- Wave Function Collapse

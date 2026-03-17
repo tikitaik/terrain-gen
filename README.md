@@ -11,3 +11,11 @@ if using Mac/Linux/Windows with MinGW-64: make
 otherwise  
 cmake -S . -B build (-G "MinGW Makefiles" if using MinGW-64, not sure what generator is for MSVC)  
 cmake --build build -> ./build/terrain-gen  
+
+## Implemented Noise Algorithms
+- Perlin noise
+- Fractal Brownian motion
+- Ridge (using FBM)
+- Domain warp FBM
+- Turbulence
+- Voronoi noise
