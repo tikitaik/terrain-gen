@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
         noiseGenShader.setFloat("TEX_RES", float(TEX_RES));
         renderQuad();
 
-        glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+        glViewport(0, 0, framebufferWidth, framebufferHeight);
         glBindFramebuffer(GL_FRAMEBUFFER, screenFBO);
         glClearColor(0.2f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
