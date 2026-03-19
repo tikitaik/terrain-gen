@@ -24,7 +24,7 @@ void main() {
     vec2 st = (gl_FragCoord.xy) / TEX_RES;
     //st += posOffset;
 
-    FragColor = ridge(st) + 0.5f * fbm(st);
+    FragColor = ridge(st);
     //FragColor = fbm(st);
     //FragColor = FragColor * 0.5f + 0.5f;
     //FragColor = voronoiNoise(st);
@@ -95,7 +95,7 @@ float ridge(vec2 st) {
     float offset = 1.0f;
     float value = turbulence(st);
     value = offset - value;
-    //value = pow(value, 5);
+    value = pow(value, 3);
     return value;
 }
 

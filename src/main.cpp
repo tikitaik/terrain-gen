@@ -13,7 +13,7 @@
 #define SCR_WIDTH 1280
 #define SCR_HEIGHT 720
 
-#define SQUARES_PER_SIDE 2048
+#define SQUARES_PER_SIDE 128
 #define SCALE 48 / SQUARES_PER_SIDE
 
 #define TEX_RES 4096
@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
 
     Shader noiseGenShader(buildPath, "noisegen");
     Shader screenShader(buildPath, "screen");
-    Shader testShader(buildPath, "test");
+    Shader terrainShader(buildPath, "terrain");
 
     glm::vec2 posOffset      = glm::vec2(0.0f);
     glm::vec2 posOffsetDelta = glm::vec2(0.1f);
@@ -133,10 +133,11 @@ int main(int argc, char* argv[]) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, noiseTex);
 
-        testShader.use();
-        testShader.setMat4("projection", proj);
-        testShader.setMat4("view", view);
-        testShader.setInt("heightMap", 0);
+        terrainShader.use();
+        terrainShader.setInt("heightMap", 0);
+        terrainShader.setVec3("viewPos", camera.pos);
+        terrainShader.setMat4("projection", proj);
+        terrainShader.setMat4("view", view);
 
         glBindVertexArray(planeVAO);
         glDrawElements(GL_TRIANGLES, SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6, GL_UNSIGNED_INT, 0);

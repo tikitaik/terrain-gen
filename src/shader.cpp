@@ -71,8 +71,62 @@ Shader::Shader(std::string buildPath, const std::string shaderName) {
     }
 
     ID = glCreateProgram();
+
+    const std::string geometryPath = shaderDirPath + shaderName + ".geom";
+
+    std::string geometryCodeStr;
+    std::ifstream geometryFile;
+
+    geometryFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
+    try {
+        geometryFile.open(geometryPath.c_str());
+
+    } catch (const std::ifstream::failure& e) {
+
+        glAttachShader(ID, vertexShader);
+        glAttachShader(ID, fragmentShader);
+        glLinkProgram(ID);
+
+        glGetProgramiv(ID, GL_LINK_STATUS, &success);
+        if (!success) {
+            glGetProgramInfoLog(ID, 512, NULL, infoLog);
+            std::cout << "ERROR::SHADER::PROGRAM::LINK_FAILED\n" << shaderDirPath << '\n' << infoLog << '\n';
+        }
+
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+
+        return;
+    }
+
+    try {
+        std::stringstream geometryStream, fragmentStream;
+        geometryStream << geometryFile.rdbuf();
+        geometryFile.close();
+        geometryCodeStr = geometryStream.str();
+
+    } catch (const std::ifstream::failure& e) {
+        std::cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ\n\t" << shaderDirPath + '\n';
+    }
+
+    const char* geometryCode = geometryCodeStr.c_str();
+    unsigned int geometryShader;
+
+    geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+
+    glShaderSource(geometryShader, 1, &geometryCode, NULL);
+    glCompileShader(geometryShader);
+
+    glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(geometryShader, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::GEOMETRY::COMPILATION_FAILED\n" << geometryPath << '\n' << infoLog << '\n';
+    }
+
     glAttachShader(ID, vertexShader);
     glAttachShader(ID, fragmentShader);
+    glAttachShader(ID, geometryShader);
     glLinkProgram(ID);
 
     glGetProgramiv(ID, GL_LINK_STATUS, &success);
@@ -83,6 +137,7 @@ Shader::Shader(std::string buildPath, const std::string shaderName) {
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
+    glDeleteShader(geometryShader);
 }
 
 void Shader::use() {
