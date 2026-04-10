@@ -13,7 +13,7 @@
 #define SCR_WIDTH 1280
 #define SCR_HEIGHT 720
 
-#define SQUARES_PER_SIDE 128
+#define SQUARES_PER_SIDE 512
 #define SCALE 48 / SQUARES_PER_SIDE
 
 #define TEX_RES 4096
@@ -135,6 +135,8 @@ int main(int argc, char* argv[]) {
 
         terrainShader.use();
         terrainShader.setInt("heightMap", 0);
+        terrainShader.setFloat("TEX_RES", float(TEX_RES));
+        terrainShader.setFloat("TRI_SIZE", float(TEX_RES) / float(SQUARES_PER_SIDE));
         terrainShader.setVec3("viewPos", camera.pos);
         terrainShader.setMat4("projection", proj);
         terrainShader.setMat4("view", view);

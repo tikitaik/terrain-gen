@@ -25,8 +25,7 @@ void main() {
     //st += posOffset;
 
     FragColor = ridge(st);
-    //FragColor = fbm(st);
-    //FragColor = FragColor * 0.5f + 0.5f;
+    FragColor += fbm(st) * 0.5f;
     //FragColor = voronoiNoise(st);
 }
 
