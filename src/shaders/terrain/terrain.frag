@@ -21,10 +21,10 @@ void main() {
         color = vec3(0.0f, 0.0f, 0.5f);
         shininess = 0.5f;
     } else if (fs_in.height < 0.65f) { 
-        color = vec3(0.0f, 0.6f, 0.0f);
+        color = vec3(0.0f, 0.3f, 0.0f);
         shininess = 0.03f;
     } else if (fs_in.height < 0.8f) { 
-        color = vec3(0.3f, 0.2f, 0.0f);
+        color = vec3(0.2f, 0.08f, 0.03f);
         shininess = 0.01f;
     } else if (fs_in.height < 0.9f) {
         color = vec3(0.3f, 0.3f, 0.3f);
@@ -32,11 +32,9 @@ void main() {
     } else {
         color = vec3(0.9f);
         shininess = 0.3f;
-    }
-    */
+    }*/
 
-    color = vec3(0.2f, 0.08f, 0.03f);
-    shininess = 0.1f;
+    color = vec3(0.2f, 0.08f, 0.03f) * 1.5f;
 
     vec3 lightPos = vec3(0.0f, 50.0f, 0.0f);
 
@@ -50,8 +48,7 @@ vec3 blinnPhong(vec3 albedo, vec3 lightPos, float shininess) {
 
     vec3 ambient = albedo * 0.1f;
 
-    //vec3 lightDir = normalize(lightPos - fs_in.fragPos);
-    vec3 lightDir = normalize(vec3(0.0f, 1.0f, 0.0f));
+    vec3 lightDir = normalize(lightPos - fs_in.fragPos);
     vec3 viewDir  = normalize(fs_in.viewPos  - fs_in.fragPos);
     float NdotL   = max(dot(normal, lightDir), 0.0f);
     vec3 diffuse  = albedo * NdotL;
@@ -62,5 +59,6 @@ vec3 blinnPhong(vec3 albedo, vec3 lightPos, float shininess) {
 
     vec3 color = ambient + diffuse + specular;
 
+    return diffuse;
     return color;
 }
