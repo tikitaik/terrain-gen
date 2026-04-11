@@ -14,7 +14,7 @@
 #define SCR_HEIGHT 720
 
 #define SQUARES_PER_SIDE 512
-#define SCALE 48 / SQUARES_PER_SIDE
+#define SCALE 24 / SQUARES_PER_SIDE
 
 #define TEX_RES 4096
 
@@ -39,7 +39,7 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
 glm::vec3 cameraUp(0.0f, 1.0f, 0.0f);
-glm::vec3 cameraInitPos(0.0f, 3.0f, 0.0f);
+glm::vec3 cameraInitPos(0.0f, 5.0f, 0.0f);
 
 Camera camera(cameraInitPos, cameraUp, SCR_WIDTH, SCR_HEIGHT);
 glm::mat4 proj = glm::perspective(glm::radians(60.0f), float(SCR_WIDTH) / float(SCR_HEIGHT), 0.1f, 100.0f);
@@ -144,7 +144,7 @@ int main(int argc, char* argv[]) {
         glBindVertexArray(planeVAO);
         glDrawElements(GL_TRIANGLES, SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6, GL_UNSIGNED_INT, 0);
 
-        //renderScreenFBO(screenShader, noiseTex);
+        renderScreenFBO(screenShader, noiseTex);
         renderScreenFBO(screenShader, screenTexture);
 
         glfwSwapBuffers(window);
