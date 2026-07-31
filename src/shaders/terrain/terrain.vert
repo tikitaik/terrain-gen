@@ -27,6 +27,10 @@ void main() {
     float heightNorth = texture(heightMap, aTexCoords + vec2(0, DIST)).r;
     float heightWest  = texture(heightMap, aTexCoords - vec2(DIST, 0)).r;
 
+    if (height < 0.4f) height = 0.4f;
+    if (heightNorth < 0.4f) heightNorth = 0.4f;
+    if (heightWest < 0.4f) heightWest = 0.4f;
+
     vs_out.normal = normalize(cross(vec3(0, heightNorth - height, DIST),
                 vec3(DIST, heightWest - height, 0)));
 

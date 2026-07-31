@@ -48,14 +48,16 @@ float fbm(vec2 st) {
 
     float value = 0.0f;
 
-    int octaves = 8;
+    int octaves = 10;
     float frequency = 2.0f;
     float lacunarity = 2.0f;
     float persistence = 0.9f;
 
     vec2 pos = st * frequency;
 
-    for (int i = 0; i < octaves; i++) {
+    if (octaves > 0) value += perlin(pos);
+
+    for (int i = 1; i < octaves; i++) {
 
         value += perlin(pos) * persistence;
         pos *= lacunarity;

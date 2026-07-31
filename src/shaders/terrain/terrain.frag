@@ -16,7 +16,7 @@ void main() {
     vec3 color = vec3(1.0f, 0.0f, 1.0f);
     float shininess = 0.0f;
 
-    /*
+    
     if (fs_in.height < 0.41f) {
         color = vec3(0.0f, 0.0f, 0.5f);
         shininess = 0.5f;
@@ -32,9 +32,9 @@ void main() {
     } else {
         color = vec3(0.9f);
         shininess = 0.3f;
-    }*/
+    }
 
-    color = vec3(0.2f, 0.08f, 0.03f) * 1.5f;
+    //color = vec3(0.2f, 0.08f, 0.03f) * 1.5f;
 
     vec3 lightPos = vec3(0.0f, 50.0f, 0.0f);
 
@@ -59,6 +59,5 @@ vec3 blinnPhong(vec3 albedo, vec3 lightPos, float shininess) {
 
     vec3 color = ambient + diffuse + specular;
 
-    return diffuse;
     return color;
 }
