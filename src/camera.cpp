@@ -1,8 +1,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <iostream>
-
 #include "camera.hpp"
 
 Camera::Camera(glm::vec3 posIn, glm::vec3 upIn, int screenWidth, int screenHeight) {

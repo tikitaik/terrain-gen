@@ -4,10 +4,16 @@ out vec4 FragColor;
 
 in VS_OUT {
     float height;
+    vec2 texCoords;
     vec3 fragPos;
     vec3 normal;
     vec3 viewPos;
 } fs_in;
+
+uniform sampler2D waterSampler;
+uniform sampler2D grassSampler;
+uniform sampler2D dirtSampler;
+uniform sampler2D stoneSampler;
 
 vec3 blinnPhong(vec3 albedo, vec3 lightPos, float shininess);
 
@@ -15,19 +21,18 @@ void main() {
 
     vec3 color = vec3(1.0f, 0.0f, 1.0f);
     float shininess = 0.0f;
-
     
     if (fs_in.height < 0.41f) {
-        color = vec3(0.0f, 0.0f, 0.5f);
+        color = texture(waterSampler, fs_in.texCoords).rgb;
         shininess = 0.5f;
     } else if (fs_in.height < 0.65f) { 
-        color = vec3(0.0f, 0.3f, 0.0f);
+        color = texture(grassSampler, fs_in.texCoords).rgb;
         shininess = 0.03f;
     } else if (fs_in.height < 0.8f) { 
-        color = vec3(0.2f, 0.08f, 0.03f);
+        color = texture(dirtSampler, fs_in.texCoords).rgb;
         shininess = 0.01f;
     } else if (fs_in.height < 0.9f) {
-        color = vec3(0.3f, 0.3f, 0.3f);
+        color = texture(stoneSampler, fs_in.texCoords).rgb;
         shininess = 0.1f;
     } else {
         color = vec3(0.9f);

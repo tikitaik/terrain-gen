@@ -33,3 +33,4 @@ find_library(GLFW NAMES glfw glfw3 REQUIRED)
 target_link_libraries(terrain-gen PRIVATE ${GLFW})
 
 file(COPY ${CMAKE_SOURCE_DIR}/src/shaders DESTINATION ${CMAKE_BINARY_DIR})
+file(COPY ${CMAKE_SOURCE_DIR}/resources DESTINATION ${CMAKE_BINARY_DIR})

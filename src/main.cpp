@@ -10,11 +10,14 @@
 #include "glm/fwd.hpp"
 #include "shader.hpp"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 #define SCR_WIDTH 1280
 #define SCR_HEIGHT 720
 
 #define SQUARES_PER_SIDE 2048
-#define SCALE 48 / SQUARES_PER_SIDE
+#define SCALE 512.0f / SQUARES_PER_SIDE
 
 #define TEX_RES 4096
 
@@ -27,6 +30,8 @@ void getPlaneIndices(unsigned int planeIndices[SQUARES_PER_SIDE * SQUARES_PER_SI
 void getPlaneTexCoords(glm::vec2 planeTexCoords[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)]);
 void getPlaneVertices(glm::vec3 planeVertices[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)]);
 
+void getTextures();
+
 std::string getBuildPath(std::string argv_0); 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int size);
@@ -35,6 +40,8 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
 int framebufferWidth, framebufferHeight;
 
+std::string buildPath;
+
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
@@ -42,7 +49,9 @@ glm::vec3 cameraUp(0.0f, 1.0f, 0.0f);
 glm::vec3 cameraInitPos(0.0f, 5.0f, 0.0f);
 
 Camera camera(cameraInitPos, cameraUp, SCR_WIDTH, SCR_HEIGHT);
-glm::mat4 proj = glm::perspective(glm::radians(60.0f), float(SCR_WIDTH) / float(SCR_HEIGHT), 0.1f, 100.0f);
+float near = 0.1f;
+float far = 1000.0f;
+glm::mat4 proj = glm::perspective(glm::radians(60.0f), float(SCR_WIDTH) / float(SCR_HEIGHT), near, far);
 
 unsigned int triangleVAO, triangleVBO;
 unsigned int quadVAO, quadVBO;
@@ -89,12 +98,13 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
+    buildPath = getBuildPath(argv[0]);
+
     // GL config
     glEnable(GL_DEPTH_TEST);
 
-    const std::string buildPath = getBuildPath(argv[0]);
-
     getObjects();
+    getTextures();
 
     Shader noiseGenShader(buildPath, "noisegen");
     Shader screenShader(buildPath, "screen");
@@ -135,11 +145,19 @@ int main(int argc, char* argv[]) {
 
         terrainShader.use();
         terrainShader.setInt("heightMap", 0);
+        terrainShader.setFloat("SCALE", SCALE);
         terrainShader.setFloat("TEX_RES", float(TEX_RES));
+        terrainShader.setFloat("PICT_TEX_TILES_PER_SIDE", 128.0f);
         terrainShader.setFloat("TRI_SIZE", float(TEX_RES) / float(SQUARES_PER_SIDE));
         terrainShader.setVec3("viewPos", camera.pos);
         terrainShader.setMat4("projection", proj);
         terrainShader.setMat4("view", view);
+
+        // texture samplers
+        terrainShader.setInt("waterSampler", 1);
+        terrainShader.setInt("grassSampler", 2);
+        terrainShader.setInt("dirtSampler",  3);
+        terrainShader.setInt("stoneSampler", 4);
 
         glBindVertexArray(planeVAO);
         glDrawElements(GL_TRIANGLES, SQUARES_PER_SIDE * SQUARES_PER_SIDE * 6, GL_UNSIGNED_INT, 0);
@@ -331,7 +349,8 @@ void getPlaneIndices(unsigned int planeIndices[SQUARES_PER_SIDE * SQUARES_PER_SI
 
 void getPlaneTexCoords(glm::vec2 planeTexCoords[(SQUARES_PER_SIDE + 1) * (SQUARES_PER_SIDE + 1)]) {
 
-    float ratio = 1 / float(SQUARES_PER_SIDE);
+    const int tiles_per_side = 1;
+    float ratio = float(tiles_per_side) / float(SQUARES_PER_SIDE);
 
     for (int i = 0; i < SQUARES_PER_SIDE + 1; i++) {
         for (int j = 0; j < SQUARES_PER_SIDE + 1; j++) {
@@ -351,6 +370,41 @@ void getPlaneVertices(glm::vec3 planeVertices[(SQUARES_PER_SIDE + 1) * (SQUARES_
 
             planeVertices[i * (SQUARES_PER_SIDE + 1) + j] = glm::vec3(xPos, yPos, zPos);
         }
+    }
+}
+
+void getTextures() {
+    int width, height, nrChannels;
+    std::string resourcesPath = buildPath + "resources/textures/";
+
+    unsigned int textures[4];
+    std::string textureFileNames[4] = { "water.jpg", "grass.jpg", "dirt.jpg", "rock.jpg" };
+
+    for (int i = 0; i < 4; i++) {
+
+        glActiveTexture(GL_TEXTURE1 + i);
+
+        std::cout << resourcesPath + textureFileNames[i] << '\n';
+
+        unsigned char* data = stbi_load((resourcesPath + textureFileNames[i]).c_str(),
+                &width, &height, &nrChannels, 0);
+
+        std::cout << "width: " << width << ", height: " << height << ", nrChannels: " << nrChannels << '\n';
+
+        glGenTextures(1, &textures[i]);
+        glBindTexture(GL_TEXTURE_2D, textures[i]);
+
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        stbi_image_free(data);
     }
 }
 

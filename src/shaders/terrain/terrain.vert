@@ -5,6 +5,7 @@ layout (location = 1) in vec2 aTexCoords;
 
 out VS_OUT {
     float height;
+    vec2 texCoords;
     vec3 fragPos;
     vec3 normal;
     vec3 viewPos;
@@ -12,7 +13,9 @@ out VS_OUT {
 
 
 uniform sampler2D heightMap;
-uniform float TEX_RES;
+uniform float SCALE;
+uniform float HEIGHT_TEX_RES;
+uniform float PICT_TEX_TILES_PER_SIDE;
 uniform float TRI_SIZE;
 uniform vec3 viewPos;
 uniform mat4 projection;
@@ -20,8 +23,9 @@ uniform mat4 view;
 
 void main() {
 
-    float AMPLITUDE = 5.0f;
-    float DIST = TRI_SIZE / TEX_RES;
+    // mult by scale so that it scales with the map size too
+    float AMPLITUDE = 200.0f * SCALE;
+    float DIST = TRI_SIZE / HEIGHT_TEX_RES;
 
     float height = texture(heightMap, aTexCoords).r;
     float heightNorth = texture(heightMap, aTexCoords + vec2(0, DIST)).r;
@@ -35,6 +39,7 @@ void main() {
                 vec3(DIST, heightWest - height, 0)));
 
     vs_out.height = height;
+    vs_out.texCoords = aTexCoords * PICT_TEX_TILES_PER_SIDE;
     vs_out.fragPos = vec3(aPos.x, AMPLITUDE * (height - 0.5f), aPos.z);
     vs_out.viewPos = viewPos;
 
